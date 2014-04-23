@@ -112,9 +112,10 @@ int main(void) {
                         printf("%s\n", buf);
 
 
-                        char *response = parseRequestMessage(buf);
+                        long size;
+                        char *response = parseRequestMessage(buf, &size);
                         //send response to client
-                        if (send(new_fd, response, strlen(response), 0) == -1)
+                        if (send(new_fd, response, size, 0) == -1)
                                 perror("send");
                         
 

@@ -28,21 +28,40 @@ int append(int ch, char** str, int *str_size) { /*tested and works*/
 }
 
 /*
+ * Returns 1 if contenttype is an image (like "image/gif") and 0 if
+ * contenttype is not an image (like "text/html")
+ */
+int isImage(char *contenttype) {
+        char *firstword = strtok(contenttype, "/");
+        return (firstword != NULL ? (strcmp(firstword, "image") == 0) : 0);
+}
+
+/*
  * Returns the string with an html header appended to it
  */
-char *appendHeaderToResponse(char* str, char* filetype) {
+char *appendHeaderToResponse(char* str, char* filetype, long *str_size) {
         char ok_response[100] = "HTTP/1.1 200 OK\nContent-Type: ";
         //length of returned string
-        int returnLen = strlen(str) + strlen(filetype) + strlen(ok_response) + 2 + 1;
+        long returnLen = *str_size + strlen(filetype) + strlen(ok_response) + 2 + 1;
         char *returnStr = (char*)malloc(returnLen*sizeof(char));
-        sprintf(returnStr, "%s%s\n\n%s", ok_response, filetype, str);
+        sprintf(returnStr, "%s%s\n\n", ok_response, filetype);
+
+        if (!isImage(filetype)) {
+                strcat(returnStr, str);
+        } else {
+                memcpy(returnStr, str, *str_size);
+        }
+        //change total size to be that of str + the header
+        *str_size = returnLen;
         return returnStr;
 }
+
 
 /*
  * Code attempts to find the extension of the file being requested
  * like "index.html" or "hello.jpg" or "user/pics/sexy.gif"
- * (Right now has text/html has default if error)
+ * 
+ * Returns NULL if no content type matches and the content type if it does match
  */
 char *getFileTypeFromPath(char *path) {
         char *filetype;
@@ -64,8 +83,7 @@ char *getFileTypeFromPath(char *path) {
                //if dot wasn't set do same thing as if the length of the
                //path was less than 2
                if (dotindex == -1) {
-                     filetype = (char*)malloc((strlen(html_file_type)+1)*sizeof(char));
-                     strcpy(filetype, html_file_type);
+                     return NULL;
                } else {
                        //go and append each of the characters to the string
                        char *extension = (char*) malloc(EXT_STR_SIZE * sizeof(char));
@@ -84,14 +102,15 @@ char *getFileTypeFromPath(char *path) {
                        } else if (strcmp(extension, ".jpg") == 0 || strcmp(extension, ".jpeg") == 0) {
                                filetype = (char*)malloc((strlen(jpg_file_type)+1)*sizeof(char));
                                strcpy(filetype, jpg_file_type);
-                       } else {
+                       } else if (strcmp(extension, ".html") == 0) {
                                filetype = (char*)malloc((strlen(html_file_type)+1)*sizeof(char));
                                strcpy(filetype, html_file_type);
+                       } else {
+                               return NULL;
                        }
                }
-        } else { //if characters in path is less than 2, filetype is normal html
-                filetype = (char*)malloc((strlen(html_file_type)+1)*sizeof(char));
-                strcpy(filetype, html_file_type);
+        } else { 
+                return NULL;
         }
         return filetype;
 }
@@ -99,7 +118,7 @@ char *getFileTypeFromPath(char *path) {
 /*
  * This function parses the request message, finds the html file in the directory, and returns the file as text
  */
-char* parseRequestMessage(char* request) {
+char* parseRequestMessage(char* request, long *size) {
         FILE *fp = NULL;
         char *contents = NULL;
         long file_size = 0;
@@ -125,9 +144,9 @@ char* parseRequestMessage(char* request) {
 
         //open the file from the second word (taking of the first '/')
         fp = fopen(path, "rb");
-
         if (fp == NULL) 
                 exit(EXIT_FAILURE);
+
 
         fseek(fp, 0, SEEK_END);
         file_size = ftell(fp);
@@ -137,6 +156,9 @@ char* parseRequestMessage(char* request) {
         fread(contents, sizeof(char), file_size, fp);
         fclose(fp);
 
-        char *completeReq = appendHeaderToResponse(contents, filetype);
+        //file_size will increase by the header amount
+        char *completeReq = appendHeaderToResponse(contents, filetype, &file_size);
+        //sets the size to the total new size
+        *size = file_size;
         return completeReq;
 }
