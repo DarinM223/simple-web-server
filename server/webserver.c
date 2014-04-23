@@ -11,6 +11,8 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+#include "parse.h"
+
 #define PORT "3490"
 #define BACKLOG 10
 #define MAXBUFLEN 1000
@@ -97,7 +99,7 @@ int main(void) {
 
                 if (!fork()) { //create a child to handle request
                         /*
-                         * Client code
+                         * Child code
                          */
                         close(sockfd);
                         //wait for client to send something
@@ -107,18 +109,19 @@ int main(void) {
                         } 
                         //dump request to console
                         buf[numbytes] = '\0';
-                        printf("Message was %s\n", buf);
+                        printf("%s\n", buf);
+
+
+                        char *response = parseRequestMessage(buf);
+                        //send response to client
+                        if (send(new_fd, response, strlen(response), 0) == -1)
+                                perror("send");
+                        
 
                         //close file descriptor
                         close(new_fd);
                         //kill the baby!!!
                         exit(0);
-                        /*
-                         * Not used
-                         */
-                        //if (send(new_fd, buf, numbytes, 0) == -1)
-                        //        perror("send");
-
                 }
                 close(new_fd);
         }
