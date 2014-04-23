@@ -1,0 +1,22 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+CC	Makefile	/^CC=gcc$/;"	m
+CFLAGS	Makefile	/^CFLAGS=-I.$/;"	m
+DEPS	Makefile	/^DEPS = # header file $/;"	m
+EXT_STR_SIZE	parse.h	5;"	d
+OBJ	Makefile	/^OBJ = serverFork.o$/;"	m
+append	parse.h	/^int append(int ch, char** str, int *str_size) { \/*tested and works*\/$/;"	f
+appendHeaderToResponse	parse.h	/^char *appendHeaderToResponse(char* str, char* filetype, long *str_size) {$/;"	f
+dostuff	serverFork.c	/^void dostuff (int sock)$/;"	f
+error	client.c	/^void error(char *msg)$/;"	f
+error	serverFork.c	/^void error(char *msg)$/;"	f
+getFileTypeFromPath	parse.h	/^char *getFileTypeFromPath(char *path) {$/;"	f
+isImage	parse.h	/^int isImage(char *contenttype) {$/;"	f
+main	client.c	/^int main(int argc, char *argv[])$/;"	f
+main	serverFork.c	/^int main(int argc, char *argv[])$/;"	f
+parseRequestMessage	parse.h	/^char* parseRequestMessage(char* request, long *size) {$/;"	f
+sigchld_handler	serverFork.c	/^void sigchld_handler(int s)$/;"	f
