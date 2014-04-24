@@ -105,9 +105,12 @@ void dostuff (int sock)
    long size;
    char *response = parseRequestMessage(buffer, &size);
 
-   printf("Response: %s\n", response);
+   //printf("Response: %s\n", response);
 
-   n = write(sock, response, size);
+   if (response)
+        n = write(sock, response, size);
+   else
+        n = write(sock, "<h1>Invalid page requested!</h1>", 32);
    //n = write(sock,"I got your message",18);
    if (n < 0) error("ERROR writing to socket");
 }

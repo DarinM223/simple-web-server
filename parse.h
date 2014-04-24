@@ -7,8 +7,8 @@
 /* appends a character to the string, and resizes if necessary 
  * str_size is the capacity 
  * returns 0 if it works, -1 if it doesn't */
-int append(int ch, char** str, int *str_size) { /*tested and works*/
-      int size = strlen(*str); /*get the size of the string*/
+int append(int ch, char** str, int *str_size) /*tested and works*/
+{       int size = strlen(*str); /*get the size of the string*/
       if ((size+1) < *str_size) { /*if the size (including the zero byte) is less than the capacity*/
               (*str)[size+1] = (*str)[size]; /*set the space after the previous zero byte to a zero byte*/
               (*str)[size] = ch; /*set the previous zero byte space to the character*/
@@ -31,7 +31,8 @@ int append(int ch, char** str, int *str_size) { /*tested and works*/
  * Returns 1 if contenttype is an image (like "image/gif") and 0 if
  * contenttype is not an image (like "text/html")
  */
-int isImage(char *contenttype) {
+int isImage(char *contenttype)
+{
         char *firstword = strtok(contenttype, "/");
         return (firstword != NULL ? (strcmp(firstword, "image") == 0) : 0);
 }
@@ -39,7 +40,8 @@ int isImage(char *contenttype) {
 /*
  * Returns the string with an html header appended to it
  */
-char *appendHeaderToResponse(char* str, char* filetype, long *str_size) {
+char *appendHeaderToResponse(char* str, char* filetype, long *str_size)
+{
         char ok_response[100] = "HTTP/1.1 200 OK\nContent-Type: ";
         //length of returned string
         long returnLen = *str_size + strlen(filetype) + strlen(ok_response) + 2 + 1;
@@ -63,7 +65,8 @@ char *appendHeaderToResponse(char* str, char* filetype, long *str_size) {
  * 
  * Returns NULL if no content type matches and the content type if it does match
  */
-char *getFileTypeFromPath(char *path) {
+char *getFileTypeFromPath(char *path) 
+{
         char *filetype;
         char html_file_type[20] = "text/html";
         char gif_file_type[20] = "image/gif";
@@ -118,7 +121,8 @@ char *getFileTypeFromPath(char *path) {
 /*
  * This function parses the request message, finds the html file in the directory, and returns the file as text
  */
-char* parseRequestMessage(char* request, long *size) {
+char* parseRequestMessage(char* request, long *size)
+{
         FILE *fp = NULL;
         char *contents = NULL;
         long file_size = 0;
@@ -138,7 +142,7 @@ char* parseRequestMessage(char* request, long *size) {
         }
 
         printf("Path is : %s\n", path);
-        filetype = getFileTypeFromPath(path);
+        filetype = getFileTypeFromPath(path); //filetype can be NULL!!
 
         //analyze path
 
@@ -156,9 +160,13 @@ char* parseRequestMessage(char* request, long *size) {
         fread(contents, sizeof(char), file_size, fp);
         fclose(fp);
 
-        //file_size will increase by the header amount
-        char *completeReq = appendHeaderToResponse(contents, filetype, &file_size);
-        //sets the size to the total new size
-        *size = file_size;
-        return completeReq;
+        if (filetype) {
+                //file_size will increase by the header amount
+                char *completeReq = appendHeaderToResponse(contents, filetype, &file_size);
+                //sets the size to the total new size
+                *size = file_size;
+                return completeReq;
+        } else {
+                return NULL;
+        }
 }
