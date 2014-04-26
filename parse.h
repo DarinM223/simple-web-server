@@ -28,33 +28,38 @@ int append(int ch, char** str, int *str_size) /*tested and works*/
 }
 
 /*
- * Returns 1 if contenttype is an image (like "image/gif") and 0 if
- * contenttype is not an image (like "text/html")
+ * Returns 1 if the first word of a content type (image in image/gif or text in text/html)
+ * is equal to the filetype parameter
  */
-int isImage(char *contenttype)
+int isType(char *contenttype, char *filetype)
 {
         char *firstword = strtok(contenttype, "/");
-        return (firstword != NULL ? (strcmp(firstword, "image") == 0) : 0);
+        return (firstword != NULL ? (strcmp(firstword, filetype) == 0) : 0);
 }
 
 /*
  * Returns the string with an html header appended to it
  */
-char *appendHeaderToResponse(char* str, char* filetype, long *str_size)
+char *appendHeaderToResponse(char* content, char* contenttype, long *content_size)
 {
         char ok_response[100] = "HTTP/1.1 200 OK\nContent-Type: ";
         //length of returned string
-        long returnLen = *str_size + strlen(filetype) + strlen(ok_response) + 2 + 1;
+        long returnLen = *content_size + strlen(contenttype) + strlen(ok_response) + 2 + 1;
         char *returnStr = (char*)malloc(returnLen*sizeof(char));
-        sprintf(returnStr, "%s%s\n\n", ok_response, filetype);
+        sprintf(returnStr, "%s%s\n\n", ok_response, contenttype);
 
-        if (!isImage(filetype)) {
-                strcat(returnStr, str);
-        } else {
-                memcpy(returnStr, str, *str_size);
+        if (isType(contenttype, "text")) { //if text or html file, concat string
+                strcat(returnStr, content);
+        } else if (isType(contenttype, "image")) { //if image, memcpy the image data
+                memcpy(returnStr, content, *content_size);
+        } else if (isType(contenttype, "video")) { //if video, memcpy the video data
+                memcpy(returnStr, content, *content_size);
+        } else { //otherwise, return NULL
+                *content_size = 0;
+                return NULL;
         }
-        //change total size to be that of str + the header
-        *str_size = returnLen;
+        //change total size to be that of content + the header
+        *content_size = returnLen;
         return returnStr;
 }
 
@@ -65,12 +70,16 @@ char *appendHeaderToResponse(char* str, char* filetype, long *str_size)
  * 
  * Returns NULL if no content type matches and the content type if it does match
  */
-char *getFileTypeFromPath(char *path) 
+char *getContentTypeFromPath(char *path) 
 {
-        char *filetype;
+        char *contenttype;
         char html_file_type[20] = "text/html";
         char gif_file_type[20] = "image/gif";
         char jpg_file_type[20] = "image/jpeg";
+        char flv_file_type[20] = "video/x-flv";
+        char avi_file_type[20] = "video/avi";
+        char mkv_file_type[20] = "video/x-matroska";
+        char mp4_file_type[20] = "video/mp4";
         int i;
         if (strlen(path) > 1) {
                int dotindex = -1;
@@ -97,25 +106,38 @@ char *getFileTypeFromPath(char *path)
                                append(path[i], &extension, &size);
                        }
 
-                       printf("Extension: %s\n", extension);
+                       //printf("Extension: %s\n", extension);
 
                        if (strcmp(extension, ".gif") == 0) {
-                               filetype = (char*)malloc((strlen(gif_file_type)+1)*sizeof(char));
-                               strcpy(filetype, gif_file_type);
+                               contenttype = (char*)malloc((strlen(gif_file_type)+1)*sizeof(char));
+                               strcpy(contenttype, gif_file_type);
                        } else if (strcmp(extension, ".jpg") == 0 || strcmp(extension, ".jpeg") == 0) {
-                               filetype = (char*)malloc((strlen(jpg_file_type)+1)*sizeof(char));
-                               strcpy(filetype, jpg_file_type);
+                               contenttype = (char*)malloc((strlen(jpg_file_type)+1)*sizeof(char));
+                               strcpy(contenttype, jpg_file_type);
                        } else if (strcmp(extension, ".html") == 0) {
-                               filetype = (char*)malloc((strlen(html_file_type)+1)*sizeof(char));
-                               strcpy(filetype, html_file_type);
+                               contenttype = (char*)malloc((strlen(html_file_type)+1)*sizeof(char));
+                               strcpy(contenttype, html_file_type);
+                       } else if (strcmp(extension, ".flv") == 0) {
+                               contenttype = (char*)malloc((strlen(flv_file_type)+1)*sizeof(char));
+                               strcpy(contenttype, flv_file_type);
+                       } else if (strcmp(extension, ".avi") == 0) {
+                               contenttype = (char*)malloc((strlen(avi_file_type)+1)*sizeof(char));
+                               strcpy(contenttype, avi_file_type);
+                       } else if (strcmp(extension, ".mkv") == 0) {
+                               contenttype = (char*)malloc((strlen(mkv_file_type)+1)*sizeof(char));
+                               strcpy(contenttype, mkv_file_type);
+                       } else if (strcmp(extension, ".mp4") == 0) {
+                               contenttype = (char*)malloc((strlen(mp4_file_type)+1)*sizeof(char));
+                               strcpy(contenttype, mp4_file_type);
                        } else {
                                return NULL;
                        }
+                       printf("Content type: %s\n", contenttype);
                }
         } else { 
                 return NULL;
         }
-        return filetype;
+        return contenttype;
 }
 
 /*
@@ -126,13 +148,13 @@ char* parseRequestMessage(char* request, long *size)
         FILE *fp = NULL;
         char *contents = NULL;
         long file_size = 0;
-        char *filetype;
+        char *contenttype;
 
         char *firstword = strtok(request, " ");
         firstword = NULL;
 
         char *secondword = strtok(NULL, " ");
-        printf("second word: %s\n", secondword);
+        //printf("second word: %s\n", secondword);
 
         char *path = (char*)malloc((strlen(secondword)+1) * (sizeof(char)));
         if (strlen(secondword) > 1) {
@@ -141,8 +163,8 @@ char* parseRequestMessage(char* request, long *size)
                 return NULL;
         }
 
-        printf("Path is : %s\n", path);
-        filetype = getFileTypeFromPath(path); //filetype can be NULL!!
+        //printf("Path is : %s\n", path);
+        contenttype = getContentTypeFromPath(path); //contenttype can be NULL!!
 
         //analyze path
 
@@ -160,9 +182,9 @@ char* parseRequestMessage(char* request, long *size)
         fread(contents, sizeof(char), file_size, fp);
         fclose(fp);
 
-        if (filetype) {
+        if (contenttype) {
                 //file_size will increase by the header amount
-                char *completeReq = appendHeaderToResponse(contents, filetype, &file_size);
+                char *completeReq = appendHeaderToResponse(contents, contenttype, &file_size);
                 //sets the size to the total new size
                 *size = file_size;
                 return completeReq;
