@@ -170,6 +170,12 @@ char* parseRequestMessage(char* request, long *size)
                 return NULL;
         }
 
+        //if even after stripping off the first '/' there is another '/' then
+        //they are trying to access root
+        if (strlen(path) > 1 && path[0] == '/') {
+                printf("Attempted to access root!\n");
+                return NULL;
+        }
         //check for .. or ~/
         int numdots = 0;
         int i;
