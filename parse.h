@@ -132,7 +132,7 @@ char *getContentTypeFromPath(char *path)
                        } else {
                                return NULL;
                        }
-                       printf("Content type: %s\n", contenttype);
+                       //printf("Content type: %s\n", contenttype);
                }
         } else { 
                 return NULL;
@@ -154,13 +154,38 @@ char* parseRequestMessage(char* request, long *size)
         firstword = NULL;
 
         char *secondword = strtok(NULL, " ");
+
+        //if there is no second word, return NULL
+        if (secondword == NULL) {
+                return NULL;
+        }
         //printf("second word: %s\n", secondword);
 
         char *path = (char*)malloc((strlen(secondword)+1) * (sizeof(char)));
+
+        //remove the first '/' if there is one
         if (strlen(secondword) > 1) {
                 strcpy(path, (secondword[0] == '/' ? secondword+1 : secondword));
         } else {
                 return NULL;
+        }
+
+        //check for .. or ~/
+        int numdots = 0;
+        int i;
+        for (i = 0; i < strlen(path); i++) {
+               if (path[i] == '.') {
+                       numdots++;
+               } else if (path[i] == '~') {
+                       printf("Attempted to access home directory!\n");
+                       return NULL;
+               } else { //reset numdots if character is not dot
+                       numdots = 0;
+               }
+               if (numdots >= 2) {
+                       printf("Attempted to go up a directory!\n");
+                       return NULL;
+               }
         }
 
         //printf("Path is : %s\n", path);
@@ -171,7 +196,8 @@ char* parseRequestMessage(char* request, long *size)
         //open the file from the second word (taking of the first '/')
         fp = fopen(path, "rb");
         if (fp == NULL) 
-                exit(EXIT_FAILURE);
+                return NULL;
+                //exit(EXIT_FAILURE);
 
 
         fseek(fp, 0, SEEK_END);

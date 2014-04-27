@@ -105,7 +105,7 @@ void dostuff (int sock)
    long size;
    char *response = parseRequestMessage(buffer, &size);
 
-   printf("Response: %s\n", response);
+   //printf("Response: %s\n", response);
 
    if (response)
         n = write(sock, response, size);
