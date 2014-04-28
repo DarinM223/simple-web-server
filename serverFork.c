@@ -111,6 +111,9 @@ void dostuff (int sock)
         n = write(sock, response, size);
    else
         n = write(sock, "<h1>Invalid page requested!</h1>", 32);
+   free(response);
+   response = NULL;
+
    //n = write(sock,"I got your message",18);
    if (n < 0) error("ERROR writing to socket");
 }

@@ -42,7 +42,7 @@ int isType(char *contenttype, char *filetype)
  */
 char *appendHeaderToResponse(char* content, char* contenttype, long *content_size)
 {
-        char ok_response[100] = "HTTP/1.1 200 OK\nContent-Type: ";
+        char ok_response[30] = "HTTP/1.1 200 OK\nContent-Type: ";
         //length of returned string
         long returnLen = *content_size + strlen(contenttype) + strlen(ok_response) + 2 + 1;
         char *returnStr = (char*)malloc(returnLen*sizeof(char));
@@ -51,15 +51,16 @@ char *appendHeaderToResponse(char* content, char* contenttype, long *content_siz
         if (isType(contenttype, "text")) { //if text or html file, concat string
                 strcat(returnStr, content);
         } else if (isType(contenttype, "image")) { //if image, memcpy the image data
-                memcpy(returnStr, content, *content_size);
+                memcpy(returnStr+strlen(returnStr), content, *content_size);
         } else if (isType(contenttype, "video")) { //if video, memcpy the video data
-                memcpy(returnStr, content, *content_size);
+                memcpy(returnStr+strlen(returnStr), content, *content_size);
         } else { //otherwise, return NULL
                 *content_size = 0;
                 return NULL;
         }
         //change total size to be that of content + the header
         *content_size = returnLen;
+        //printf("new content size: %d\n", *content_size);
         return returnStr;
 }
 
@@ -95,7 +96,8 @@ char *getContentTypeFromPath(char *path)
                //if dot wasn't set do same thing as if the length of the
                //path was less than 2
                if (dotindex == -1) {
-                     return NULL;
+                     //return NULL;
+                     contenttype = NULL;
                } else {
                        //go and append each of the characters to the string
                        char *extension = (char*) malloc(EXT_STR_SIZE * sizeof(char));
@@ -130,12 +132,15 @@ char *getContentTypeFromPath(char *path)
                                contenttype = (char*)malloc((strlen(mp4_file_type)+1)*sizeof(char));
                                strcpy(contenttype, mp4_file_type);
                        } else {
-                               return NULL;
+                               contenttype = NULL;
+                               //return NULL;
                        }
+                       free(extension);
                        //printf("Content type: %s\n", contenttype);
                }
         } else { 
-                return NULL;
+                //return NULL;
+                contenttype = NULL;
         }
         return contenttype;
 }
@@ -217,10 +222,24 @@ char* parseRequestMessage(char* request, long *size)
         if (contenttype) {
                 //file_size will increase by the header amount
                 char *completeReq = appendHeaderToResponse(contents, contenttype, &file_size);
+                free(path);
+                free(contenttype);
+                free(contents);
+                path = NULL;
+                contenttype = NULL;
+                contents = NULL;
+
                 //sets the size to the total new size
                 *size = file_size;
                 return completeReq;
         } else {
+                free(path);
+                free(contenttype);
+                free(contents);
+                path = NULL;
+                contenttype = NULL;
+                contents = NULL;
+
                 return NULL;
         }
 }
