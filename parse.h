@@ -42,14 +42,29 @@ int isType(char *contenttype, char *filetype)
  */
 char *appendHeaderToResponse(char* content, char* contenttype, long *content_size)
 {
-        char ok_response[30] = "HTTP/1.1 200 OK\nContent-Type: ";
+        char ok_response[32] = "HTTP/1.1 200 OK\nContent-Type: ";
+        char content_length[17] = "Content-Length: ";
         //length of returned string
-        long returnLen = *content_size + strlen(contenttype) + strlen(ok_response) + 2 + 1;
+        char dnum[100];
+        //print long to string dnum so that size can be found   
+        sprintf(dnum, "%ld", *content_size);
+
+        long returnLen = *content_size + strlen(contenttype) + strlen(ok_response) + strlen(content_length) + strlen(dnum) + 3 + 1;
         char *returnStr = (char*)malloc(returnLen*sizeof(char));
-        sprintf(returnStr, "%s%s\n\n", ok_response, contenttype);
+        //print out like this:
+        //HTTP/1.1 200 OK
+        //Content-Type: blah
+        //Content-Length: blah
+        sprintf(returnStr, "%s%s\n%s%s\n\n", ok_response, contenttype, content_length, dnum);
 
         if (isType(contenttype, "text")) { //if text or html file, concat string
-                strcat(returnStr, content);
+                
+                printf("return string size: %d\n", strlen(returnStr));
+                printf("total return string size: %ld\n", returnLen);
+                printf("content size %ld\n", *content_size);
+
+                memcpy(returnStr+strlen(returnStr), content, *content_size);
+                //strcat(returnStr, content);
         } else if (isType(contenttype, "image")) { //if image, memcpy the image data
                 memcpy(returnStr+strlen(returnStr), content, *content_size);
         } else if (isType(contenttype, "video")) { //if video, memcpy the video data
