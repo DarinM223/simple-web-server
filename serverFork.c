@@ -110,7 +110,7 @@ void dostuff (int sock)
    if (response)
         n = write(sock, response, size);
    else
-        n = write(sock, "<h1>Invalid page requested!</h1>", 32);
+        n = write(sock, "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 32\n\n<h1>Invalid page requested!</h1>", 95);
    free(response);
    response = NULL;
 
