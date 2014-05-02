@@ -66,13 +66,11 @@ char *appendHeaderToResponse(char* content, char* contenttype, long *content_siz
         //Content-Length: blah
         sprintf(returnStr, "%s%s\n%s%s\n\n", ok_response, contenttype, content_length, dnum);
 
-        if (isType(contenttype, "text")) { //if text or html file, concat string
+        //if content type is correct type
+        if (isType(contenttype, "text") || isType(contenttype, "image") || isType(contenttype, "video")) {
+                //copy the content data into the response string
                 memcpy(returnStr+strlen(returnStr), content, *content_size);
-        } else if (isType(contenttype, "image")) { //if image, memcpy the image data
-                memcpy(returnStr+strlen(returnStr), content, *content_size);
-        } else if (isType(contenttype, "video")) { //if video, memcpy the video data
-                memcpy(returnStr+strlen(returnStr), content, *content_size);
-        } else { //otherwise, return NULL
+        } else {
                 *content_size = 0;
                 free(returnStr);
                 returnStr = NULL;
@@ -229,7 +227,8 @@ char* parseRequestMessage(char* request, long *size)
         if (fp == NULL) 
                 return NULL;
 
-
+        //read file size and file contents
+        
         fseek(fp, 0, SEEK_END);
         file_size = ftell(fp);
         rewind(fp);

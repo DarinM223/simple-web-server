@@ -113,7 +113,7 @@ void dostuff (int sock)
    if (response)
         n = write(sock, response, size);
    else //the result after parsing is NULL, write a HTTP error message to the socket
-        n = write(sock, "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 32\n\n<h1>Invalid page requested!</h1>", 95);
+        n = write(sock, "HTTP/1.1 404 Not Found\nContent-Type: text/html\nContent-Length: 32\n\n<h1>Invalid page requested!</h1>", 102);
 
    if (response) {//if response is not NULL,
       free(response);
