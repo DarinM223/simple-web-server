@@ -39,18 +39,27 @@ int isType(char *contenttype, char *filetype)
 
 /*
  * Returns the string with an html header appended to it
+ * Parameters: content - the content that is requested (can be either string or binary type)
+ *             contenttype - the content type string
+ *             content_size - the size of the requested content (will increase by the size of the header after the function)
+ * Returns: Response string if content type is correct, NULL otherwise
  */
 char *appendHeaderToResponse(char* content, char* contenttype, long *content_size)
 {
+        //predefined header strings
         char ok_response[32] = "HTTP/1.1 200 OK\nContent-Type: ";
         char content_length[17] = "Content-Length: ";
         //length of returned string
         char dnum[100];
-        //print long to string dnum so that size can be found   
+
+        //print content size to string dnum so that the digit length can be found 
         sprintf(dnum, "%ld", *content_size);
 
+        //calculate total length of the response and allocate the memory
         long returnLen = *content_size + strlen(contenttype) + strlen(ok_response) + strlen(content_length) + strlen(dnum) + 3 + 1;
         char *returnStr = (char*)malloc(returnLen*sizeof(char));
+
+        //copy the header:
         //print out like this:
         //HTTP/1.1 200 OK
         //Content-Type: blah
@@ -58,24 +67,20 @@ char *appendHeaderToResponse(char* content, char* contenttype, long *content_siz
         sprintf(returnStr, "%s%s\n%s%s\n\n", ok_response, contenttype, content_length, dnum);
 
         if (isType(contenttype, "text")) { //if text or html file, concat string
-                
-                printf("return string size: %d\n", strlen(returnStr));
-                printf("total return string size: %ld\n", returnLen);
-                printf("content size %ld\n", *content_size);
-
                 memcpy(returnStr+strlen(returnStr), content, *content_size);
-                //strcat(returnStr, content);
         } else if (isType(contenttype, "image")) { //if image, memcpy the image data
                 memcpy(returnStr+strlen(returnStr), content, *content_size);
         } else if (isType(contenttype, "video")) { //if video, memcpy the video data
                 memcpy(returnStr+strlen(returnStr), content, *content_size);
         } else { //otherwise, return NULL
                 *content_size = 0;
+                free(returnStr);
+                returnStr = NULL;
                 return NULL;
         }
-        //change total size to be that of content + the header
+
+        //change total size to be that of content + the header and return the complete response
         *content_size = returnLen;
-        //printf("new content size: %d\n", *content_size);
         return returnStr;
 }
 
@@ -84,11 +89,13 @@ char *appendHeaderToResponse(char* content, char* contenttype, long *content_siz
  * Code attempts to find the extension of the file being requested
  * like "index.html" or "hello.jpg" or "user/pics/sexy.gif"
  * 
- * Returns NULL if no content type matches and the content type if it does match
+ * Returns: NULL if no content type matches and the content type if it does match
  */
 char *getContentTypeFromPath(char *path) 
 {
         char *contenttype;
+
+        //predefined content type strings
         char html_file_type[20] = "text/html";
         char gif_file_type[20] = "image/gif";
         char jpg_file_type[20] = "image/jpeg";
@@ -96,6 +103,7 @@ char *getContentTypeFromPath(char *path)
         char avi_file_type[20] = "video/avi";
         char mkv_file_type[20] = "video/x-matroska";
         char mp4_file_type[20] = "video/mp4";
+
         int i;
         if (strlen(path) > 1) {
                int dotindex = -1;
@@ -111,10 +119,9 @@ char *getContentTypeFromPath(char *path)
                //if dot wasn't set do same thing as if the length of the
                //path was less than 2
                if (dotindex == -1) {
-                     //return NULL;
                      contenttype = NULL;
                } else {
-                       //go and append each of the characters to the string
+                       //go and append each of the characters to the string to create the extension
                        char *extension = (char*) malloc(EXT_STR_SIZE * sizeof(char));
                        strcpy(extension, "");
                        int size = EXT_STR_SIZE;
@@ -123,8 +130,7 @@ char *getContentTypeFromPath(char *path)
                                append(path[i], &extension, &size);
                        }
 
-                       //printf("Extension: %s\n", extension);
-
+                       //determine content type string from extension
                        if (strcmp(extension, ".gif") == 0) {
                                contenttype = (char*)malloc((strlen(gif_file_type)+1)*sizeof(char));
                                strcpy(contenttype, gif_file_type);
@@ -148,13 +154,11 @@ char *getContentTypeFromPath(char *path)
                                strcpy(contenttype, mp4_file_type);
                        } else {
                                contenttype = NULL;
-                               //return NULL;
                        }
                        free(extension);
-                       //printf("Content type: %s\n", contenttype);
+                       extension = NULL;
                }
         } else { 
-                //return NULL;
                 contenttype = NULL;
         }
         return contenttype;
@@ -162,6 +166,9 @@ char *getContentTypeFromPath(char *path)
 
 /*
  * This function parses the request message, finds the html file in the directory, and returns the file as text
+ * Parameters: request - the request string
+ *             size - the size of the response (can be any value since it gets set inside the function)
+ * Returns: a response string with a header and the requested content
  */
 char* parseRequestMessage(char* request, long *size)
 {
@@ -179,7 +186,6 @@ char* parseRequestMessage(char* request, long *size)
         if (secondword == NULL) {
                 return NULL;
         }
-        //printf("second word: %s\n", secondword);
 
         char *path = (char*)malloc((strlen(secondword)+1) * (sizeof(char)));
 
@@ -214,7 +220,6 @@ char* parseRequestMessage(char* request, long *size)
                }
         }
 
-        //printf("Path is : %s\n", path);
         contenttype = getContentTypeFromPath(path); //contenttype can be NULL!!
 
         //analyze path
@@ -223,7 +228,6 @@ char* parseRequestMessage(char* request, long *size)
         fp = fopen(path, "rb");
         if (fp == NULL) 
                 return NULL;
-                //exit(EXIT_FAILURE);
 
 
         fseek(fp, 0, SEEK_END);
@@ -249,10 +253,8 @@ char* parseRequestMessage(char* request, long *size)
                 return completeReq;
         } else {
                 free(path);
-                free(contenttype);
                 free(contents);
                 path = NULL;
-                contenttype = NULL;
                 contents = NULL;
 
                 return NULL;

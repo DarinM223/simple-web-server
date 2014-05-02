@@ -94,26 +94,30 @@ int main(int argc, char *argv[])
 void dostuff (int sock)
 {
    int n;
+   //large buffer to prevent truncation
    char buffer[1000];
       
    bzero(buffer,1000);
    n = read(sock,buffer,999);
    
    if (n < 0) error("ERROR reading from socket");
+   
+   //dumps request to console (for part A)
    printf("Here is the message: %s\n",buffer);
 
    long size;
    char *response = parseRequestMessage(buffer, &size);
 
-   //printf("Response: %s\n", response);
-
+   //if there is a non-NULL string after parsing, write size amount of bytes to the socket
+   //(size would have changed after the call to parseRequestMessage)
    if (response)
         n = write(sock, response, size);
-   else
+   else //the result after parsing is NULL, write a HTTP error message to the socket
         n = write(sock, "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 32\n\n<h1>Invalid page requested!</h1>", 95);
-   free(response);
-   response = NULL;
 
-   //n = write(sock,"I got your message",18);
+   if (response) {//if response is not NULL,
+      free(response);
+      response = NULL;
+   }
    if (n < 0) error("ERROR writing to socket");
 }
