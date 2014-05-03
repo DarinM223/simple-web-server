@@ -101,6 +101,7 @@ char *getContentTypeFromPath(char *path)
         char avi_file_type[20] = "video/avi";
         char mkv_file_type[20] = "video/x-matroska";
         char mp4_file_type[20] = "video/mp4";
+        char icon_file_type[20] = "image/x-icon";
 
         int i;
         if (strlen(path) > 1) {
@@ -150,6 +151,9 @@ char *getContentTypeFromPath(char *path)
                        } else if (strcmp(extension, ".mp4") == 0) {
                                contenttype = (char*)malloc((strlen(mp4_file_type)+1)*sizeof(char));
                                strcpy(contenttype, mp4_file_type);
+                       } else if (strcmp(extension, ".ico") == 0) {
+                               contenttype = (char*)malloc((strlen(icon_file_type)+1)*sizeof(char));
+                               strcpy(contenttype, icon_file_type);
                        } else {
                                contenttype = NULL;
                        }
